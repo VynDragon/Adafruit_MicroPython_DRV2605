@@ -5,14 +5,12 @@
 # Will play all 123 effects in order for about a half second each.
 import time
 
-import board
-import busio
-
 import adafruit_drv2605
+import machine
 
 
 # Initialize I2C bus and DRV2605 module.
-i2c = busio.I2C(board.SCL, board.SDA)
+i2c = machine.SoftI2C(machine.Pin(22, machine.Pin.OUT), machine.Pin(21, machine.Pin.OUT))
 drv = adafruit_drv2605.DRV2605(i2c)
 
 # Main loop runs forever trying each effect (1-123).

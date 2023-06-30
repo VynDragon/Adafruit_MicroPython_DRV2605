@@ -6,20 +6,14 @@
 `adafruit_drv2605`
 ====================================================
 
-CircuitPython module for the DRV2605 haptic feedback motor driver.  See
+Port to Micropython of CircuitPython module for the DRV2605 haptic feedback motor driver.  See
 examples/simpletest.py for a demo of the usage.
 
 * Author(s): Tony DiCola
 """
 from micropython import const
 
-from adafruit_bus_device.i2c_device import I2CDevice
-
-try:
-    from typing import Union
-    from busio import I2C
-except ImportError:
-    pass
+from machine import I2C
 
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_DRV2605.git"
@@ -87,10 +81,11 @@ class DRV2605:
     # Class-level buffer for reading and writing data with the sensor.
     # This reduces memory allocations but means the code is not re-entrant or
     # thread safe!
-    _BUFFER = bytearray(2)
+    _BUFFER = bytearray(1)
 
     def __init__(self, i2c: I2C, address: int = _DRV2605_ADDR) -> None:
-        self._device = I2CDevice(i2c, address)
+        self._device = i2c
+        self._address = address
         # Check chip ID is 3 or 7 (DRV2605 or DRV2605L).
         status = self._read_u8(_DRV2605_REG_STATUS)
         device_id = (status >> 5) & 0x07
@@ -118,17 +113,13 @@ class DRV2605:
 
     def _read_u8(self, address: int) -> int:
         # Read an 8-bit unsigned value from the specified 8-bit address.
-        with self._device as i2c:
-            self._BUFFER[0] = address & 0xFF
-            i2c.write_then_readinto(self._BUFFER, self._BUFFER, out_end=1, in_end=1)
+        self._device.readfrom_mem_into(self._address, address, self._BUFFER)
         return self._BUFFER[0]
 
     def _write_u8(self, address: int, val: int) -> None:
         # Write an 8-bit unsigned value to the specified 8-bit address.
-        with self._device as i2c:
-            self._BUFFER[0] = address & 0xFF
-            self._BUFFER[1] = val & 0xFF
-            i2c.write(self._BUFFER, end=2)
+        self._BUFFER[0] = val & 0xFF
+        self._device.writeto_mem(self._address, address, self._BUFFER)
 
     def play(self) -> None:
         """Play back the select effect(s) on the motor."""
